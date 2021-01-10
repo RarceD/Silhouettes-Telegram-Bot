@@ -13,24 +13,37 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+birthdays = Birthday_Data()
+birthdays.parse_file("birthday_input.json")
+
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Hi!')
 
+
 def help_command(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Help!')
+
 
 def echo(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(update.message.text)
 
-def b_command (update: Update, context: CallbackContext) -> None:
+
+def b_command(update: Update, context: CallbackContext) -> None:
     print(update.message.text)
-    update.message.reply_text("hola bea")
+    update.message.reply_text("Hola Bea :)")
+    context.bot.send_photo(update.message.chat_id, photo=open('data/cat.png', 'rb'))
 
 def alarm(context):
-    #Send the alarm message
+    # Send the alarm message
     job = context.job
-    context.bot.send_message(job.context, text='Beep!')
+    birthdays_today = birthdays.check_if_birthday()
+    if (birthdays_today != []):
+        for b in birthdays_today:
+            msg_telegram = "Es el cumpleaños de "
+            msg_telegram += b
+            msg_telegram += " que no se te olvide felicitarlo, hijo de p***"
+            context.bot.send_message(job.context, text=msg_telegram)
 
 
 def remove_job_if_exists(name, context):
@@ -53,15 +66,17 @@ def set_timer(update: Update, context: CallbackContext) -> None:
             return
 
         job_removed = remove_job_if_exists(str(chat_id), context)
-        context.job_queue.run_daily(alarm, due, context=chat_id, name=str(chat_id))
+        context.job_queue.run_repeating(
+            alarm, due, context=chat_id, name=str(chat_id))
 
-        text = 'Timer successfully set!'
+        text = 'Notificacione de cumpleaños activadas'
         if job_removed:
             text += ' Old one was removed.'
         update.message.reply_text(text)
 
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /set <seconds>')
+
 
 def main():
     """Start the bot."""
@@ -79,13 +94,12 @@ def main():
     dispatcher.add_handler(CommandHandler("B", b_command))
     dispatcher.add_handler(CommandHandler("set", set_timer))
     # on noncommand i.e message - echo the message on Telegram
-    dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, echo))
-
+    dispatcher.add_handler(MessageHandler(
+        Filters.text & ~Filters.command, echo))
+ 
     # Start the Bot
-    while (True):
-        print("loop")
-        updater.start_polling()
-        updater.idle()
+    updater.start_polling()
+    updater.idle()
 
 
 if __name__ == '__main__':

@@ -33,11 +33,3 @@ class Birthday_Data(object):
             if (match):
                 all_birthdays_today.append(b)
         return all_birthdays_today
-        
-
-birthdays = Birthday_Data()
-birthdays.parse_file("birthday_input.json")
-birthdays_today = birthdays.check_if_birthday()
-if (birthdays_today != []):
-    print (birthdays_today)
-

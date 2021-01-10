@@ -1,0 +1,15 @@
+{
+    "birthdays": [
+      {
+        "name": "Juan Carlos",
+        "month": 1,
+        "day": 15
+      },
+      {
+        "name": "Paquito",
+        "month": 2,
+        "day": 28
+      }
+    ]
+  }
+  

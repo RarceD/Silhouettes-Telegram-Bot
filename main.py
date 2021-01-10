@@ -1,9 +1,9 @@
 import logging
-from private import KEY
-from Birthday_Data import Birthday_Data
-
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from private import KEY
+from Birthday_Data import Birthday_Data
+from Request_Resources import Request_Resources
 
 # Enable logging
 logging.basicConfig(
@@ -21,18 +21,19 @@ def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Hi!')
 
 
-def help_command(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text('Help!')
-
-
 def echo(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(update.message.text)
 
 
 def b_command(update: Update, context: CallbackContext) -> None:
-    print(update.message.text)
+    # print(update.message.text)
     update.message.reply_text("Hola Bea :)")
-    context.bot.send_photo(update.message.chat_id, photo=open('data/cat.png', 'rb'))
+    # Send a local cat:
+    # context.bot.send_photo(update.message.chat_id, photo=open('data/cat.png', 'rb'))
+    # Send a url:
+    r = Request_Resources()
+    context.bot.send_photo(update.message.chat_id, r.obtein_cat_picture())
+
 
 def alarm(context):
     # Send the alarm message
@@ -55,6 +56,7 @@ def remove_job_if_exists(name, context):
         job.schedule_removal()
     return True
 
+
 def set_timer(update: Update, context: CallbackContext) -> None:
     """Add a job to the queue."""
     chat_id = update.message.chat_id
@@ -67,7 +69,7 @@ def set_timer(update: Update, context: CallbackContext) -> None:
 
         job_removed = remove_job_if_exists(str(chat_id), context)
         context.job_queue.run_repeating(
-            alarm, due, context=chat_id, name=str(chat_id))
+            alarm, due*60, context=chat_id, name=str(chat_id))
 
         text = 'Notificacione de cumpleaños activadas'
         if job_removed:
@@ -90,13 +92,12 @@ def main():
 
     # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("help", help_command))
     dispatcher.add_handler(CommandHandler("B", b_command))
     dispatcher.add_handler(CommandHandler("set", set_timer))
     # on noncommand i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(
         Filters.text & ~Filters.command, echo))
- 
+
     # Start the Bot
     updater.start_polling()
     updater.idle()

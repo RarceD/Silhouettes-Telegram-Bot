@@ -25,19 +25,25 @@ def echo(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(update.message.text)
 
 
-def b_command(update: Update, context: CallbackContext) -> None:
+def b_command(context):
     # print(update.message.text)
-    update.message.reply_text("Hola Bea :)")
+    print("b_command")
+    job = context.job
+    # context.message.reply_text("Hola Bea :)")
+    context.bot.send_message(job.context, text="Hola Bea: ")
     # Send a local cat:
     # context.bot.send_photo(update.message.chat_id, photo=open('data/cat.png', 'rb'))
     # Send a url:
     r = Request_Resources()
-    context.bot.send_photo(update.message.chat_id, r.obtein_cat_picture())
+    context.bot.send_photo(job.context, r.obtein_cat_picture())
 
+def stuff_function(update: Update, context: CallbackContext) -> None:
+    update.message.reply_text("TODO")
 
 def alarm(context):
     # Send the alarm message
     job = context.job
+    not_party = True
     birthdays_today = birthdays.check_if_birthday()
     if (birthdays_today != []):
         for b in birthdays_today:
@@ -45,6 +51,10 @@ def alarm(context):
             msg_telegram += b
             msg_telegram += " que no se te olvide felicitarlo, hijo de p***"
             context.bot.send_message(job.context, text=msg_telegram)
+            not_party = False
+    if not_party:
+        context.bot.send_message(
+            job.context, text="Hoy no hay cumples a recordar")
 
 
 def remove_job_if_exists(name, context):
@@ -63,41 +73,45 @@ def set_timer(update: Update, context: CallbackContext) -> None:
     try:
         # args[0] should contain the time for the timer in seconds
         due = int(context.args[0])
+        timer_info = str(context.args[1])
+        print(timer_info)
+        timer_info = timer_info[1:-1]
+        print(timer_info)
         if due < 0:
-            update.message.reply_text('Sorry we can not go back to future!')
+            update.message.reply_text(
+                'Al pasado no se me da bien ir no, de momento')
             return
-
-        job_removed = remove_job_if_exists(str(chat_id), context)
-        context.job_queue.run_repeating(
-            alarm, due*60, context=chat_id, name=str(chat_id))
-
-        text = 'Notificacione de cumpleaños activadas'
-        if job_removed:
-            text += ' Old one was removed.'
-        update.message.reply_text(text)
-
+        if timer_info == 'cats':
+            job_removed = remove_job_if_exists(str(chat_id), context)
+            context.job_queue.run_repeating(
+                b_command, due, context=chat_id, name=str(chat_id))
+            text = 'Notificacione de gatos activadas'
+            if job_removed:
+                text += ' Old one was removed.'
+            update.message.reply_text(text)
+        else:
+            job_removed = remove_job_if_exists(str(chat_id), context)
+            context.job_queue.run_repeating(
+                alarm, due, context=chat_id, name=str(chat_id))
+            text = 'Notificacione de cumpleaños activadas'
+            if job_removed:
+                text += ' Old one was removed.'
+            update.message.reply_text(text)
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /set <seconds>')
 
 
 def main():
-    """Start the bot."""
-    # Create the Updater and pass it your bot's token.
-    # Make sure to set use_context=True to use the new context based callbacks
-    # Post version 12 this will no longer be necessary
     updater = Updater(KEY, use_context=True)
-
     # Get the dispatcher to register handlers
     dispatcher = updater.dispatcher
-
     # on different commands - answer in Telegram
     dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CommandHandler("B", b_command))
+    dispatcher.add_handler(CommandHandler("B", stuff_function))
     dispatcher.add_handler(CommandHandler("set", set_timer))
     # on noncommand i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(
         Filters.text & ~Filters.command, echo))
-
     # Start the Bot
     updater.start_polling()
     updater.idle()

@@ -1,4 +1,5 @@
 import logging
+import datetime
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
 from private import KEY, stop_seconds
@@ -20,18 +21,7 @@ birthdays.parse_file("birthday_input.json")
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Hi!')
 
-def jara_def(update: Update, context: CallbackContext) -> None:
-    refresh_time = 5
-    update.message.reply_text('Te va a felicitar tu puta madre')
-    stop_seconds()
-    update.message.reply_text('será el primer caso en el que le comáis los huevos a un bot')
-    stop_seconds()
-    update.message.reply_text('!Perra!')
-    stop_seconds()
-    update.message.reply_text('más perra y no naces')
-    stop_seconds()
-    update.message.reply_text('que te jodan: ')
-    update.message.reply_text('Felicidades Jara')
+
 
 def echo(update: Update, context: CallbackContext) -> None:
     update.message.reply_text(update.message.text)
@@ -49,8 +39,10 @@ def b_command(context):
     r = Request_Resources()
     context.bot.send_photo(job.context, r.obtein_cat_picture())
 
+
 def stuff_function(update: Update, context: CallbackContext) -> None:
     update.message.reply_text("TODO")
+
 
 def alarm(context):
     # Send the alarm message
@@ -95,8 +87,11 @@ def set_timer(update: Update, context: CallbackContext) -> None:
             return
         if timer_info == 'cats':
             job_removed = remove_job_if_exists(str(chat_id), context)
-            context.job_queue.run_repeating(
-                b_command, due, context=chat_id, name=str(chat_id))
+            t = datetime.time(22, 00, 00, 000000)
+            context.job_queue.run_daily(
+                b_command, t, days=tuple(range(7)), context=update)
+            # context.job_queue.run_repeating(
+            #     b_command, due, context=chat_id, name=str(chat_id))
             text = 'Notificacione de gatos activadas'
             if job_removed:
                 text += ' Old one was removed.'
@@ -121,7 +116,7 @@ def main():
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("B", stuff_function))
     dispatcher.add_handler(CommandHandler("set", set_timer))
-    dispatcher.add_handler(CommandHandler("jara", jara_def))
+    # dispatcher.add_handler(CommandHandler("jara", jara_def))
     # on noncommand i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(
         Filters.text & ~Filters.command, echo))

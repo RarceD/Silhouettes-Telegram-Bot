@@ -2,7 +2,7 @@ import logging
 import datetime
 from telegram import Update
 from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
-from private import KEY, stop_seconds
+from private import KEY, stop_seconds, jokes
 from Birthday_Data import Birthday_Data
 from Request_Resources import Request_Resources
 import time
@@ -17,6 +17,10 @@ logger.setLevel(logging.DEBUG)
 birthdays = Birthday_Data()
 birthdays.parse_file("birthday_input.json")
 
+times_ = 0
+for i in jokes:
+    times_+=1
+print(times_)
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Hi!')
@@ -38,10 +42,19 @@ def b_command(context):
     # Send a url:
     r = Request_Resources()
     context.bot.send_photo(job.context, r.obtein_cat_picture())
-
+    
+def shit_joke(update: Update, context: CallbackContext):
+    # import json
+    import random
+    update.message.reply_text(jokes[random.randint(0,88)])
+    # with open("birthday_input.json") as json_file:
+    #     j = json.load(json_file)
+    #     joke = j['jokes'][random.randint(0,60)]
+    # update.message.reply_text(json.dumps(joke))
 
 def stuff_function(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text("TODO")
+    job_removed = remove_job_if_exists(str(update.message.chat_id), context)
+    update.message.reply_text("ya vale de gatos")
 
 
 def alarm(context):
@@ -87,11 +100,11 @@ def set_timer(update: Update, context: CallbackContext) -> None:
             return
         if timer_info == 'cats':
             job_removed = remove_job_if_exists(str(chat_id), context)
-            t = datetime.time(22, 00, 00, 000000)
-            context.job_queue.run_daily(
-                b_command, t, days=tuple(range(7)), context=update)
-            # context.job_queue.run_repeating(
-            #     b_command, due, context=chat_id, name=str(chat_id))
+            t = datetime.time(9, 13, 00, 000000)
+            # context.job_queue.run_daily(
+                # b_command, t, days=tuple(range(7)), context=update)
+            context.job_queue.run_repeating(
+                b_command, due, context=chat_id, name=str(chat_id))
             text = 'Notificacione de gatos activadas'
             if job_removed:
                 text += ' Old one was removed.'
@@ -102,7 +115,7 @@ def set_timer(update: Update, context: CallbackContext) -> None:
                 alarm, due*60, context=chat_id, name=str(chat_id))
             text = 'Notificacione de cumpleaños activadas'
             if job_removed:
-                text += ' Old one was removed.'
+                text += ' Old one was removed.'  
             update.message.reply_text(text)
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /set <seconds>')
@@ -116,6 +129,7 @@ def main():
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("B", stuff_function))
     dispatcher.add_handler(CommandHandler("set", set_timer))
+    dispatcher.add_handler(CommandHandler("caca", shit_joke))
     # dispatcher.add_handler(CommandHandler("jara", jara_def))
     # on noncommand i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(

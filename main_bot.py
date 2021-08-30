@@ -5,22 +5,13 @@ from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, Callb
 from private import KEY, stop_seconds, jokes
 from Birthday_Data import Birthday_Data
 from Request_Resources import Request_Resources
-import time
-# Enable logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO
-)
+from mqtt_controller import mqtt_light_change, mqtt_read_status_lamp
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
-birthdays = Birthday_Data()
-birthdays.parse_file("birthday_input.json")
 
-times_ = 0
-for i in jokes:
-    times_+=1
-print(times_)
+# birthdays = Birthday_Data()
+# birthdays.parse_file("birthday_input.json")
+# print(times_)
 
 def start(update: Update, context: CallbackContext) -> None:
     update.message.reply_text('Hi!')
@@ -33,7 +24,7 @@ def echo(update: Update, context: CallbackContext) -> None:
 
 def b_command(context):
     # print(update.message.text)
-    print("b_command")
+    # print("b_command")
     job = context.job
     # context.message.reply_text("Hola Bea :)")
     context.bot.send_message(job.context, text="Hola Bea: ")
@@ -61,17 +52,17 @@ def alarm(context):
     # Send the alarm message
     job = context.job
     not_party = True
-    birthdays_today = birthdays.check_if_birthday()
-    if (birthdays_today != []):
-        for b in birthdays_today:
-            msg_telegram = "Es el cumpleaños de "
-            msg_telegram += b
-            msg_telegram += " que no se te olvide felicitarlo, hijo de p***"
-            context.bot.send_message(job.context, text=msg_telegram)
-            not_party = False
-    if not_party:
-        context.bot.send_message(
-            job.context, text="Hoy no hay cumples a recordar")
+    # birthdays_today = birthdays.check_if_birthday()
+    # if (birthdays_today != []):
+    #     for b in birthdays_today:
+    #         msg_telegram = "Es el cumpleaños de "
+    #         msg_telegram += b
+    #         msg_telegram += " que no se te olvide felicitarlo, hijo de p***"
+    #         context.bot.send_message(job.context, text=msg_telegram)
+    #         not_party = False
+    # if not_party:
+    #     context.bot.send_message(
+    #         job.context, text="Hoy no hay cumples a recordar")
 
 
 def remove_job_if_exists(name, context):
@@ -91,9 +82,9 @@ def set_timer(update: Update, context: CallbackContext) -> None:
         # args[0] should contain the time for the timer in seconds
         due = int(context.args[0])
         timer_info = str(context.args[1])
-        print(timer_info)
+        # print(timer_info)
         timer_info = timer_info[1:-1]
-        print(timer_info)
+        # print(timer_info)
         if due < 0:
             update.message.reply_text(
                 'Al pasado no se me da bien ir no, de momento')
@@ -120,6 +111,17 @@ def set_timer(update: Update, context: CallbackContext) -> None:
     except (IndexError, ValueError):
         update.message.reply_text('Usage: /set <seconds>')
 
+def send_msg_mqtt_light(update: Update, context: CallbackContext) -> None:
+    status = mqtt_light_change()
+    response = "Canbricks: Action Light: " + str(status) + " - OK"
+    update.message.reply_text(response)
+
+def read_msg_mqtt(update: Update, context: CallbackContext) -> None:
+    mqtt_response, raw_data = mqtt_read_status_lamp()
+    response = "Canbricks: Read Status - OK: " + mqtt_response 
+    update.message.reply_text(response)
+    update.message.reply_text(raw_data)
+
 
 def main():
     updater = Updater(KEY, use_context=True)
@@ -129,8 +131,10 @@ def main():
     dispatcher.add_handler(CommandHandler("start", start))
     dispatcher.add_handler(CommandHandler("B", stuff_function))
     dispatcher.add_handler(CommandHandler("set", set_timer))
-    dispatcher.add_handler(CommandHandler("caca", shit_joke))
-    # dispatcher.add_handler(CommandHandler("jara", jara_def))
+
+    dispatcher.add_handler(CommandHandler("action", send_msg_mqtt_light))
+    dispatcher.add_handler(CommandHandler("read", read_msg_mqtt))
+
     # on noncommand i.e message - echo the message on Telegram
     dispatcher.add_handler(MessageHandler(
         Filters.text & ~Filters.command, echo))
